@@ -1,6 +1,13 @@
 from fastapi import FastAPI
 
 from app.core.database import Base, engine
+from app.core.models import(
+    category_model,
+    client_model,
+    employee_model,
+    employee_client_model,
+    log_model
+)
 
 Base.metadata.create_all(bind=engine)
 
