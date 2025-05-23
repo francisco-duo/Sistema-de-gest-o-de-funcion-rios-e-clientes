@@ -1,0 +1,13 @@
+### ALEMBIC COMMANDS
+
+1. Create a new migration
+    ```
+    alembic revision --autogenerate -m "<description>"
+    ```
+
+2. Apply the migration to database
+
+    ```
+    alembic upgrade head
+    ```
+    
