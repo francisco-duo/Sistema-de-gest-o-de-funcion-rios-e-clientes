@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.core.models import Client, Employee, EmployeeLevel
+from app.core.security import hash_password
 from app.repositories.category_repository import CategoryRepository
 from app.repositories.employee_repository import EmployeeRepository
 from app.schemas.employee_schema import EmployeeCreate
@@ -13,12 +14,12 @@ MAX_CLIENTS_JUNIOR = 5
 
 
 class EmployeeService:
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, actor: Employee | None = None):
         self.db = db
         self.repository = EmployeeRepository(db)
         self.categories = CategoryRepository(db)
-        self.clients = ClientService(db)
-        self.logs = LogService(db)
+        self.clients = ClientService(db, actor)
+        self.logs = LogService(db, actor)
 
     def create(self, data: EmployeeCreate) -> Employee:
         if self.repository.get_by_email(data.email):
@@ -28,9 +29,16 @@ class EmployeeService:
         if data.category_id is not None and self.categories.get_by_id(data.category_id) is None:
             raise NotFoundError("Categoria não encontrada.")
 
-        employee = self.repository.create(Employee(**data.model_dump()))
+        employee = self.repository.create(
+            Employee(
+                **data.model_dump(exclude={"password"}),
+                password_hash=hash_password(data.password),
+            )
+        )
         self.logs.register(
-            "CREATE_EMPLOYEE", Employee.__tablename__, employee.id,
+            "CREATE_EMPLOYEE",
+            Employee.__tablename__,
+            employee.id,
             {"name": employee.name, "level": employee.level.value},
         )
 
@@ -45,7 +53,13 @@ class EmployeeService:
         return employee
 
     def list_paginated(
-        self, *, name: str | None, level: EmployeeLevel | None, category_id: int | None, skip: int, limit: int,
+        self,
+        *,
+        name: str | None,
+        level: EmployeeLevel | None,
+        category_id: int | None,
+        skip: int,
+        limit: int,
     ) -> tuple[list[Employee], int]:
         return self.repository.list_paginated(name=name, level=level, category_id=category_id, skip=skip, limit=limit)
 
@@ -59,13 +73,14 @@ class EmployeeService:
         if client in employee.clients:
             raise ConflictError("Este cliente já está vinculado ao funcionário.")
         if employee.level == EmployeeLevel.JUNIOR and len(employee.clients) >= MAX_CLIENTS_JUNIOR:
-            raise BusinessRuleError(
-                f"Funcionários JUNIOR podem atender no máximo {MAX_CLIENTS_JUNIOR} clientes."
-            )
+            raise BusinessRuleError(f"Funcionários JUNIOR podem atender no máximo {MAX_CLIENTS_JUNIOR} clientes.")
 
         employee.clients.append(client)
         self.logs.register(
-            "LINK_CLIENT", Employee.__tablename__, employee.id, {"client_id": client.id},
+            "LINK_CLIENT",
+            Employee.__tablename__,
+            employee.id,
+            {"client_id": client.id},
         )
 
         self.db.commit()
@@ -80,7 +95,10 @@ class EmployeeService:
 
         employee.clients.remove(client)
         self.logs.register(
-            "UNLINK_CLIENT", Employee.__tablename__, employee.id, {"client_id": client.id},
+            "UNLINK_CLIENT",
+            Employee.__tablename__,
+            employee.id,
+            {"client_id": client.id},
         )
 
         self.db.commit()

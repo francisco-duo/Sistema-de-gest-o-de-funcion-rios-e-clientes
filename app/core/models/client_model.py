@@ -11,10 +11,8 @@ if TYPE_CHECKING:
 
 
 class Client(Base):
-    __tablename__ = 'clients'
-    __table_args__ = (
-        CheckConstraint("length(cnpj) = 14", name="ck_clients_cnpj_length"),
-    )
+    __tablename__ = "clients"
+    __table_args__ = (CheckConstraint("length(cnpj) = 14", name="ck_clients_cnpj_length"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100), index=True)

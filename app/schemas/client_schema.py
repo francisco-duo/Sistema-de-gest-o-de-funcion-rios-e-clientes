@@ -1,5 +1,6 @@
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_serializer, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
+from app.core.models import Client
 from app.utils.documents import normalize_document
 from app.utils.masks import format_cnpj, mask_email
 
@@ -24,17 +25,17 @@ class ClientCreate(BaseModel):
 
 
 class ClientRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
     id: int
     name: str
     email: str
     cnpj: str
 
-    @field_serializer("email")
-    def serialize_email(self, value: str) -> str:
-        return mask_email(value)
-
-    @field_serializer("cnpj")
-    def serialize_cnpj(self, value: str) -> str:
-        return format_cnpj(value)
+    @classmethod
+    def from_model(cls, client: Client, *, show_sensitive: bool = False) -> "ClientRead":
+        """Monta a resposta; o e-mail só vem completo quando `show_sensitive` é True (ADMIN)."""
+        return cls(
+            id=client.id,
+            name=client.name,
+            email=client.email if show_sensitive else mask_email(client.email),
+            cnpj=format_cnpj(client.cnpj),
+        )

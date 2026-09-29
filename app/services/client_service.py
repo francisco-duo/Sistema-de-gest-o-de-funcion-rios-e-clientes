@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from app.core.models import Client
+from app.core.models import Client, Employee
 from app.repositories.client_repository import ClientRepository
 from app.schemas.client_schema import ClientCreate
 from app.services.exceptions import ConflictError, NotFoundError
@@ -8,10 +8,10 @@ from app.services.log_service import LogService
 
 
 class ClientService:
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, actor: Employee | None = None):
         self.db = db
         self.repository = ClientRepository(db)
-        self.logs = LogService(db)
+        self.logs = LogService(db, actor)
 
     def create(self, data: ClientCreate) -> Client:
         if self.repository.get_by_email(data.email):

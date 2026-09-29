@@ -3,6 +3,11 @@ def mask_cpf(cpf: str) -> str:
     return f"***.{cpf[3:6]}.{cpf[6:9]}-**"
 
 
+def format_cpf(cpf: str) -> str:
+    """'12345678901' -> '123.456.789-01'"""
+    return f"{cpf[:3]}.{cpf[3:6]}.{cpf[6:9]}-{cpf[9:]}"
+
+
 def mask_email(email: str) -> str:
     """'francisco@gmail.com' -> 'f*******o@gmail.com'"""
     local, _, domain = email.partition("@")

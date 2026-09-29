@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from app.core.models.client_model import Client
 
 
-class EmployeeLevel(str, enum.Enum):
+class EmployeeLevel(enum.StrEnum):
     JUNIOR = "JUNIOR"
     PLENO = "PLENO"
     SENIOR = "SENIOR"
@@ -20,22 +20,21 @@ class EmployeeLevel(str, enum.Enum):
 
 
 class Employee(Base):
-    __tablename__ = 'employees'
-    __table_args__ = (
-        CheckConstraint("length(cpf) = 11", name="ck_employees_cpf_length"),
-    )
+    __tablename__ = "employees"
+    __table_args__ = (CheckConstraint("length(cpf) = 11", name="ck_employees_cpf_length"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100), index=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     cpf: Mapped[str] = mapped_column(String(11), unique=True, index=True)  # Apenas dígitos
+    password_hash: Mapped[str] = mapped_column(String(255))  # Nunca a senha em texto puro
     level: Mapped[EmployeeLevel] = mapped_column(
         Enum(EmployeeLevel, native_enum=False, length=20, create_constraint=True, name="ck_employees_level"),
         default=EmployeeLevel.JUNIOR,
         server_default=EmployeeLevel.JUNIOR.value,
     )
 
-    category_id: Mapped[int | None] = mapped_column(ForeignKey('categories.id'))
+    category_id: Mapped[int | None] = mapped_column(ForeignKey("categories.id"))
     category: Mapped["Category | None"] = relationship(back_populates="employees")
 
     clients: Mapped[list["Client"]] = relationship(

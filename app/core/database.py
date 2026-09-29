@@ -5,7 +5,7 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from .configs import URLS_CONFIG
 
-database_url = URLS_CONFIG['DATABASE_URL']
+database_url = URLS_CONFIG["DATABASE_URL"]
 
 # check_same_thread só existe no driver do SQLite
 connect_args = {"check_same_thread": False} if database_url.startswith("sqlite") else {}

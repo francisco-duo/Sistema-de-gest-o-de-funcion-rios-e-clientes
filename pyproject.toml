@@ -7,6 +7,33 @@ requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.15.2",
     "fastapi[standard]>=0.115.12",
+    "pwdlib[argon2]>=0.2",
+    "pyjwt>=2.10",
     "python-dotenv>=1.1.0",
     "sqlalchemy>=2.0.41",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "ruff>=0.12",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["alembic/versions"]  # arquivos gerados pelo Alembic
+
+[tool.ruff.lint]
+# E/F: erros básicos, I: ordem dos imports, UP: sintaxe moderna, B: bugs comuns
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]
+
+[tool.ruff.lint.isort]
+known-third-party = ["alembic"]  # a pasta alembic/ do projeto não é o pacote alembic

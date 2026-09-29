@@ -42,6 +42,9 @@ O sistema permite:
 | **Pydantic**        | Validação e serialização de dados                 |
 | **Alembic**         | Migrações de banco de dados                      |
 | **Uvicorn**         | Servidor ASGI para rodar a aplicação FastAPI     |
+| **PyJWT + pwdlib**  | Autenticação com JWT e hash de senha (Argon2)    |
+| **pytest**          | Testes automatizados                             |
+| **Ruff**            | Lint e formatação do código                      |
 
 ---
 
@@ -49,21 +52,26 @@ O sistema permite:
 
 ```
 .
+├── .github/workflows/       # CI: lint e testes a cada push
 ├── alembic/                 # Migrações do banco de dados
 │   ├── env.py
 │   └── versions/
 ├── app/
 │   ├── api/
+│   │   ├── dependencies.py  # Autenticação e permissões por nível
 │   │   ├── main.py          # Instância do FastAPI (app.api.main:app)
 │   │   └── routes/          # Rotas da API
 │   ├── core/
 │   │   ├── configs.py       # Leitura das variáveis de ambiente (.env)
 │   │   ├── database.py      # Engine, sessão e Base do SQLAlchemy
+│   │   ├── security.py      # Hash de senha e tokens JWT
 │   │   └── models/          # Models do SQLAlchemy
 │   ├── repositories/        # Acesso ao banco de dados
 │   ├── schemas/             # Schemas Pydantic (entrada e saída)
+│   ├── scripts/             # Scripts de linha de comando (ex.: criar ADMIN)
 │   ├── services/            # Regras de negócio
 │   └── utils/
+├── tests/                   # Testes com pytest
 ├── .env.example             # Modelo do arquivo .env
 ├── alembic.ini
 ├── pyproject.toml           # Dependências (uv)
@@ -101,18 +109,25 @@ O sistema permite:
         .venv\Scripts\activate      # Windows
 
         pip install -r requirements.txt
+        pip install pytest ruff     # opcional: ferramentas de desenvolvimento
         ```
 
 3. Configure as variáveis de ambiente
 
-    Copie o arquivo de exemplo e ajuste a `DATABASE_URL` se necessário:
+    Copie o arquivo de exemplo e ajuste os valores:
 
     ```bash
     cp .env.example .env      # Linux/macOS
     copy .env.example .env    # Windows
     ```
 
-    Por padrão, o projeto usa SQLite (`DATABASE_URL=sqlite:///./database.db`). Sem a `DATABASE_URL`, a aplicação não inicia.
+    | Variável | Descrição |
+    |---|---|
+    | `DATABASE_URL` | URL do banco. Por padrão, SQLite (`sqlite:///./database.db`) |
+    | `SECRET_KEY` | Chave que assina os tokens JWT. Gere uma com `python -c "import secrets; print(secrets.token_hex(32))"` |
+    | `ACCESS_TOKEN_EXPIRE_MINUTES` | Validade do token, em minutos (padrão: 30) |
+
+    Sem a `DATABASE_URL` ou a `SECRET_KEY`, a aplicação não inicia.
 
 4. Crie as tabelas do banco com o Alembic
 
@@ -127,13 +142,21 @@ O sistema permite:
     alembic upgrade head
     ```
 
-5. Rode a aplicação
+5. Crie o primeiro funcionário ADMIN
+
+    Todas as rotas exigem login, então o primeiro ADMIN é criado pelo terminal (a senha é pedida sem aparecer na tela):
+
+    ```bash
+    python -m app.scripts.create_admin --name "Seu Nome" --email voce@empresa.com --cpf 12345678901
+    ```
+
+6. Rode a aplicação
 
     ```bash
     uvicorn app.api.main:app --reload
     ```
 
-6. Acesse a documentação em:
+7. Acesse a documentação em:
 
     ```
     http://localhost:8000/docs
@@ -142,3 +165,29 @@ O sistema permite:
 ## 📃 Documentação da API
 
 A documentação automática gerada pelo **FastAPI** pode ser acessada via **Swagger UI**, onde é possível testar todos os endpoints, consultar schemas e ver exemplos de requisição e resposta.
+
+No Swagger, clique em **Authorize** e informe o e-mail (no campo `username`) e a senha para fazer login.
+
+## 🔐 Autenticação e permissões
+
+O login é feito em `POST /auth/token`, com e-mail e senha, e retorna um token JWT. Envie o token no header `Authorization: Bearer <token>` em todas as outras rotas.
+
+| Ação                          | JUNIOR | PLENO | SENIOR | ADMIN |
+|-------------------------------|:------:|:-----:|:------:|:-----:|
+| Consultar funcionários e clientes | ✅ | ✅ | ✅ | ✅ |
+| Criar clientes                | ❌ | ✅ | ✅ | ✅ |
+| Vincular/desvincular clientes | ❌ | ✅ | ✅ | ✅ |
+| Criar funcionários            | ❌ | ❌ | ❌ | ✅ |
+| Ver CPF e e-mail sem máscara  | ❌ | ❌ | ❌ | ✅ |
+
+Funcionários **JUNIOR** podem atender no máximo 5 clientes.
+
+## 🧪 Testes e qualidade de código
+
+```bash
+pytest                   # roda os testes (banco SQLite em memória)
+ruff check .             # lint
+ruff format .            # formata o código
+```
+
+O workflow em `.github/workflows/ci.yml` roda o lint, a verificação de formatação e os testes a cada push e pull request.
