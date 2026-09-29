@@ -8,6 +8,7 @@ from sqlalchemy import pool
 from alembic import context
 
 from app.core.database import Base
+import app.core.models  # noqa: F401 - registra todos os models no Base.metadata
 
 
 # this is the Alembic Config object, which provides
