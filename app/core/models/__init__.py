@@ -1,4 +1,4 @@
-from .employee_model import Employee
+from .employee_model import Employee, EmployeeLevel
 from .category_model import Category
 from .client_model import Client
 from .log_model import Log
