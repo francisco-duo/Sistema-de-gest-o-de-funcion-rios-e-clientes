@@ -13,7 +13,7 @@ class Log(Base):
     table = Column(String, nullable=False)                      # Ex: "users", "clients"
     record_id = Column(Integer, nullable=True)                  # ID do registro afetado
     performed_by = Column(String, nullable=True)                # Nome ou ID de quem executou
-    timestamp = Column(DateTime, default=datetime.now())       # Data/hora da ação
+    timestamp = Column(DateTime, default=datetime.now)       # Data/hora da ação
     data = Column(JSON, nullable=True)
 
     def __repr__(self):

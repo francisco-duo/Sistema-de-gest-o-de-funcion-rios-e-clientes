@@ -11,7 +11,7 @@ class Category(Base):
     name = Column(String, index=True)
     description = Column(String, index=True)
 
-    users = relationship("User", back_populates="category")
+    employees = relationship("Employee", back_populates="category")
 
     def __str__(self):
         return f"Category(id={self.id}, name={self.name}, description={self.description})"

@@ -14,7 +14,7 @@ class Client(Base):
 
     employees = relationship(
         "Employee",
-        secondary="employee_client_association_table",
+        secondary="employee_client",
         back_populates="clients",
     )
 
