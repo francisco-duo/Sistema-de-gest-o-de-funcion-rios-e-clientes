@@ -40,12 +40,38 @@ O sistema permite:
 | **SQLAlchemy ORM**  | Mapeamento objeto-relacional para banco de dados |
 | **SQLite**          | Banco de dados leve para desenvolvimento         |
 | **Pydantic**        | Validação e serialização de dados                 |
-| **Alembic** (opcional) | Migrações de banco de dados                       |
+| **Alembic**         | Migrações de banco de dados                      |
 | **Uvicorn**         | Servidor ASGI para rodar a aplicação FastAPI     |
 
 ---
 
 ## 📁 Estrutura do Projeto
+
+```
+.
+├── alembic/                 # Migrações do banco de dados
+│   ├── env.py
+│   └── versions/
+├── app/
+│   ├── api/
+│   │   ├── main.py          # Instância do FastAPI (app.api.main:app)
+│   │   └── routes/          # Rotas da API
+│   ├── core/
+│   │   ├── configs.py       # Leitura das variáveis de ambiente (.env)
+│   │   ├── database.py      # Engine, sessão e Base do SQLAlchemy
+│   │   └── models/          # Models do SQLAlchemy
+│   ├── repositories/        # Acesso ao banco de dados
+│   ├── schemas/             # Schemas Pydantic (entrada e saída)
+│   ├── services/            # Regras de negócio
+│   └── utils/
+├── .env.example             # Modelo do arquivo .env
+├── alembic.ini
+├── pyproject.toml           # Dependências (uv)
+├── requirements.txt         # Dependências (pip), gerado a partir do uv.lock
+└── uv.lock
+```
+
+---
 
 ## ⚙️ Como executar o projeto
 
@@ -53,35 +79,61 @@ O sistema permite:
 
     ```bash
     git clone https://github.com/francisco-duo/Sistema-de-gest-o-de-funcion-rios-e-clientes.git
-    cd 
+    cd Sistema-de-gest-o-de-funcion-rios-e-clientes
     ```
 
-2. Crie um ambiente virtual, ative e instale
+2. Crie o ambiente virtual e instale as dependências
 
-    - Caso esteja utilizando `pip`
+    - Com `uv` (recomendado)
 
+        ```bash
+        uv sync
         ```
-        python -m venv venv
 
-        source venv/bin/activate  # Linux/macOS
-        venv\Scripts\activate     # Windows
+        O `uv sync` cria o `.venv` e instala as versões exatas do `uv.lock`. Com `uv`, rode os comandos dos próximos passos com o prefixo `uv run` (ex.: `uv run alembic upgrade head`).
+
+    - Com `pip`
+
+        ```bash
+        python -m venv .venv
+
+        source .venv/bin/activate   # Linux/macOS
+        .venv\Scripts\activate      # Windows
 
         pip install -r requirements.txt
         ```
-    - Caso esteja utilizando `uv`
 
-        ```
-        uv venv create
-        uv pip install  # pyproject.toml
-        ```
+3. Configure as variáveis de ambiente
 
-3. Rode a aplicação
+    Copie o arquivo de exemplo e ajuste a `DATABASE_URL` se necessário:
 
-    ```
-    uvicorn app.main:app --reload
+    ```bash
+    cp .env.example .env      # Linux/macOS
+    copy .env.example .env    # Windows
     ```
 
-4. Acesse a documentação em:
+    Por padrão, o projeto usa SQLite (`DATABASE_URL=sqlite:///./database.db`). Sem a `DATABASE_URL`, a aplicação não inicia.
+
+4. Crie as tabelas do banco com o Alembic
+
+    ```bash
+    alembic upgrade head
+    ```
+
+    O schema do banco é gerenciado apenas pelo Alembic. Ao alterar um model, gere e aplique uma nova migration:
+
+    ```bash
+    alembic revision --autogenerate -m "descricao da mudanca"
+    alembic upgrade head
+    ```
+
+5. Rode a aplicação
+
+    ```bash
+    uvicorn app.api.main:app --reload
+    ```
+
+6. Acesse a documentação em:
 
     ```
     http://localhost:8000/docs
